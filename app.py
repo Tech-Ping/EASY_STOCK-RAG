@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 import yfinance as yf
+from flasgger import Swagger
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+swagger = Swagger(app)
 
 # 회사명과 티커 매핑
 COMPANY_TICKERS = {
@@ -22,6 +24,73 @@ STOCK_FIELDS = {
 
 @app.route('/stock-info', methods=['POST'])
 def get_stock_info():
+    """
+    주식 정보를 가져오는 API
+    ---
+    tags:
+      - Stock Info
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - company_name
+            - stock_field
+            - date
+          properties:
+            company_name:
+              type: string
+              description: "회사명 (예: 삼성전자, 현대차)"
+              example: "삼성전자"
+            stock_field:
+              type: string
+              description: "요청할 주식 정보 (시가, 최고가, 최저가, 종가, 거래량)"
+              example: "시가"
+            date:
+              type: string
+              format: date
+              description: "조회할 날짜 (YYYY-MM-DD)"
+              example: "2023-12-01"
+    responses:
+      200:
+        description: "주식 정보 조회 성공"
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              description: "주식 정보 메시지"
+              example: "2023년 12월 1일, 삼성전자의 시가는 70,000원입니다."
+      400:
+        description: "잘못된 요청 (회사명 또는 필드 오류)"
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              description: "오류 메시지"
+              example: "지원하지 않는 회사입니다: XYZ"
+      404:
+        description: "조회 실패 (주식 데이터 없음)"
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              description: "오류 메시지"
+              example: "해당 날짜에 대한 주식 정보가 없습니다: 2023-12-01"
+      500:
+        description: "서버 오류"
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              description: "서버 오류 메시지"
+              example: "서버 에러: 데이터 처리 중 오류 발생"
+    """
     try:
         data = request.json
         company_name = data.get("company_name")
