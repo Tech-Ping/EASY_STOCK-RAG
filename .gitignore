@@ -1,0 +1,25 @@
+# Ignore .env file
+.env
+
+# Ignore other common Python files and folders
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Ignore virtual environments
+env/
+venv/
+ENV/
+.venv/
+.VENV/
+
+# Ignore logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+*.idea/
+*.vscode/
