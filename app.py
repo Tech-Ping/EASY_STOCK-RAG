@@ -2,6 +2,10 @@ from flask import Flask, request, jsonify
 import yfinance as yf
 from flasgger import Swagger
 from datetime import datetime, timedelta
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from openai_service import get_response
 
 app = Flask(__name__)
 swagger = Swagger(app)
@@ -25,71 +29,34 @@ STOCK_FIELDS = {
 @app.route('/stock-info', methods=['POST'])
 def get_stock_info():
     """
-    주식 정보를 가져오는 API
+    주식 정보를 처리하는 API
     ---
-    tags:
-      - Stock Info
     parameters:
       - name: body
         in: body
         required: true
         schema:
           type: object
-          required:
-            - company_name
-            - stock_field
-            - date
           properties:
             company_name:
               type: string
-              description: "회사명 (예: 삼성전자, 현대차)"
-              example: "삼성전자"
+              description: 회사명
+              example: 삼성전자
             stock_field:
               type: string
-              description: "요청할 주식 정보 (시가, 최고가, 최저가, 종가, 거래량)"
-              example: "시가"
+              description: 주식 정보 필드 (시가, 종가 등)
+              example: 종가
             date:
               type: string
-              format: date
-              description: "조회할 날짜 (YYYY-MM-DD)"
-              example: "2023-12-01"
+              description: 날짜 (YYYY-MM-DD)
+              example: 2023-12-01
     responses:
       200:
-        description: "주식 정보 조회 성공"
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              description: "주식 정보 메시지"
-              example: "2023년 12월 1일, 삼성전자의 시가는 70,000원입니다."
+        description: 주식 데이터
       400:
-        description: "잘못된 요청 (회사명 또는 필드 오류)"
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              description: "오류 메시지"
-              example: "지원하지 않는 회사입니다: XYZ"
+        description: 잘못된 요청
       404:
-        description: "조회 실패 (주식 데이터 없음)"
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              description: "오류 메시지"
-              example: "해당 날짜에 대한 주식 정보가 없습니다: 2023-12-01"
-      500:
-        description: "서버 오류"
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              description: "서버 오류 메시지"
-              example: "서버 에러: 데이터 처리 중 오류 발생"
+        description: 데이터 없음
     """
     try:
         data = request.json
@@ -137,5 +104,48 @@ def get_stock_info():
     except Exception as e:
         return jsonify({"error": f"서버 에러: {str(e)}"}), 500
 
+
+# 사용자 주식 질문을 처리하는 API(GPT 기본 성능)
+@app.route('/ask', methods=['POST'])
+def ask():
+    """
+    사용자 질문을 처리하는 API
+    ---
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            prompt:
+              type: string
+              description: 사용자 질문
+              example: "PBR이란 무엇인가요?"
+    responses:
+      200:
+        description: OpenAI 응답
+      400:
+        description: 잘못된 요청
+      500:
+        description: 서버 에러
+    """
+    try:
+        # 요청 데이터에서 질문 추출
+        data = request.json
+        prompt = data.get("prompt", "")
+
+        if not prompt:
+            return jsonify({"error": "질문이 비어있습니다."}), 400
+
+        # OpenAI 응답 생성
+        response = get_response(prompt)
+        return jsonify({"response": response})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)
+    print("app.py 테스트 실행")
+    response = get_response("PER이란 무엇인가요?")
+    print(f"응답: {response}")
