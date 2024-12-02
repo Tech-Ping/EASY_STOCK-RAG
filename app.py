@@ -49,7 +49,7 @@ def get_stock_info():
             date:
               type: string
               description: 날짜 (YYYY-MM-DD)
-              example: 2023-12-01
+              example: "2023-12-01"
     responses:
       200:
         description: 주식 데이터
