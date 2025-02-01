@@ -1,8 +1,8 @@
 # 📰 TechPing-RAG
 
 ## 📌 개요
-이 프로젝트는 이화캡스톤프로젝트 '이지-스톡'의 인앱 서비스형 챗봇 서버로,
-Flask 기반의 ** 💸 주식 뉴스 크롤링 및 AI 기반 금융 챗봇 💸**입니다.
+이 프로젝트는 이화캡스톤프로젝트 '이지-스톡'의 인앱 서비스형 챗봇 서버로,<br>
+Flask 기반의 💸 **주식 뉴스 크롤링 및 AI 기반 금융 챗봇 💸**입니다.
 - Yahoo Finance API로 tickers들의 2년간 주식 정보 접근
 - OpenAI GPT-4 Turbo를 커스터마이징하여 사용자의 금융 질문에 친근하고 이해하기 쉬운 답변 제공
 - Selenium과 BeautifulSoup을 이용한 네이버 금융 뉴스 크롤링
@@ -29,7 +29,7 @@ Flask 기반의 ** 💸 주식 뉴스 크롤링 및 AI 기반 금융 챗봇 💸
 │── app.py                      # Flask API 서버
 │── news_crawler.py             # 네이버 금융 뉴스 크롤러 (Selenium + BeautifulSoup)
 │── openai_service.py           # OpenAI GPT-4 Turbo 챗봇 API
-│── essential_package.txt            # 프로젝트 의존성 패키지 목록
+│── essential_package.txt       # 프로젝트 의존성 패키지 목록
 │── .env                        # 환경 변수 (API 키 포함)
 ```
 
