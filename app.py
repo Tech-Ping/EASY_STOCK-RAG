@@ -10,6 +10,7 @@ from dateutil import parser
 from news_crawler import store_latest_news
 
 app = Flask(__name__)
+
 swagger = Swagger(app)
 
 # 회사명과 티커 매핑
@@ -36,7 +37,7 @@ NEWS_TICKERS = {
     "비에이치아이": "083650"
 }
 
-@app.route('/stock-info', methods=['POST'])
+@app.route('/flask/stock-info', methods=['POST'])
 def get_stock_info():
     """
     주식 정보를 처리하는 API
@@ -111,7 +112,7 @@ def get_stock_info():
         return jsonify({"error": f"서버 에러: {str(e)}"}), 500
 
 
-@app.route('/ask', methods=['POST'])
+@app.route('/flask/ask', methods=['POST'])
 def ask():
     """
     사용자 질문을 처리하는 API
@@ -150,7 +151,7 @@ def ask():
         return jsonify({"error": str(e)}), 500
     
 
-@app.route('/crawl-news', methods=['GET'])
+@app.route('/flask/crawl-news', methods=['GET'])
 def crawl_news():
     """
     최신 뉴스를 크롤링하고 특정 ticker별로 필터링하는 API
@@ -190,4 +191,4 @@ def crawl_news():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run('0.0.0.0',port=5000,debug=True)
