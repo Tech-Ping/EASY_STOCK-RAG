@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 import os
 import hashlib
 from pinecone import Pinecone, ServerlessSpec
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings  # ✅ 최신 라이브러리 사용
-from langchain_core.documents import Document  # ✅ 요약 시 필요
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings  
+from langchain_core.documents import Document  
 from langchain.chains.summarize import load_summarize_chain
 from urllib.parse import parse_qs, urlparse
 
@@ -48,9 +48,60 @@ HEADERS = {
     "Connection": "keep-alive"
 }
 
+# 주식 상세 > 종목별 뉴스 조회하는 API에서 쓰이는 서비스단 코드
+def fetch_latest_news(ticker_code):
+    iframe_url = get_news_iframe_url(ticker_code)
+    if not iframe_url:
+        return []
+
+    response = requests.get(iframe_url, headers=HEADERS)
+    response.encoding = "euc-kr"
+    if response.status_code != 200:
+        print(f"iframe 요청 실패! 상태 코드: {response.status_code}")
+        return []
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    news_table = soup.find("table", class_="type5")
+    if not news_table:
+        print("뉴스 테이블을 찾을 수 없음")
+        return []
+
+    news_rows = news_table.find_all("tr")
+    news_items = []
+    for row in news_rows:
+        title_tag = row.find("a", class_="tit")
+        date_tag = row.find("td", class_="date")
+        if title_tag and date_tag:
+            title = title_tag.text.strip()
+            link = title_tag["href"]
+
+            if "/item/news_read.naver?" in link:
+                parsed_url = urlparse(link)
+                query_params = parse_qs(parsed_url.query)
+                office_id = query_params.get("office_id", [""])[0]
+                article_id = query_params.get("article_id", [""])[0]
+                if office_id and article_id:
+                    link = f"https://n.news.naver.com/mnews/article/{office_id}/{article_id}"
+                else:
+                    link = f"https://finance.naver.com{link}"
+            elif not link.startswith("http"):
+                link = f"https://finance.naver.com{link}"
+
+            date = date_tag.text.strip()
+            news_items.append({
+                "title": title,
+                "link": link,
+                "date": date
+            })
+
+        if len(news_items) >= 5:
+            break
+
+    return news_items
+
+
 def summarize_news(article_text):
     try:
-        # ✅ OpenAI GPT-4 Turbo 모델 설정 (랜덤성 최소화)
         llm = ChatOpenAI(api_key=OPENAI_API_KEY, temperature=0)
 
         prompt = (
@@ -60,7 +111,7 @@ def summarize_news(article_text):
             f"{article_text}"
         )
         response = llm.invoke(prompt)
-        summary = response.content.strip()  # ✅ 응답에서 내용만 추출
+        summary = response.content.strip()
 
         return summary  
     
@@ -85,7 +136,6 @@ def get_news_article(url):
 
         article_soup = BeautifulSoup(response.text, "html.parser")
 
-        # ✅ 최신 네이버 뉴스 본문 구조 반영
         article_body = article_soup.select_one("#dic_area")
 
         if article_body:
@@ -149,7 +199,6 @@ def get_latest_stock_news(ticker_name, ticker_code):
     title = title_tag.text.strip()
     link = title_tag["href"]
 
-    # ✅ 링크가 상대 경로일 경우, 네이버 뉴스(mnews.naver.com) URL로 변환
     if "/item/news_read.naver?" in link:
         parsed_url = urlparse(link)
         query_params = parse_qs(parsed_url.query)
@@ -160,7 +209,7 @@ def get_latest_stock_news(ticker_name, ticker_code):
         if office_id and article_id:
             link = f"https://n.news.naver.com/mnews/article/{office_id}/{article_id}"
         else:
-            link = f"https://finance.naver.com{link}"  # 기존 방식 유지
+            link = f"https://finance.naver.com{link}"  
 
     elif not link.startswith("http"):
         link = f"https://finance.naver.com{link}"
@@ -168,13 +217,12 @@ def get_latest_stock_news(ticker_name, ticker_code):
     date_tag = first_news.find("td", class_="date")
     news_date = date_tag.text.strip() if date_tag else "Unknown"
 
-    # 기사 본문 가져오기
     article_text = get_news_article(link)
     summary = summarize_news(article_text)
 
     return {
         "title": title,
-        "link": link,  # ✅ 정상적인 URL 변환
+        "link": link,  
         "summary": summary,
         "date": news_date,
         "ticker": ticker_name
@@ -197,7 +245,7 @@ def store_latest_news(tickers_to_fetch):
 
             vector_id = generate_ascii_id(latest_news["ticker"], latest_news["title"], latest_news["date"])
 
-            vector = embeddings.embed_query(str(latest_news["summary"]))  # 🔥 문자열 변환
+            vector = embeddings.embed_query(str(latest_news["summary"])) 
 
             index.upsert([
                 {
@@ -207,7 +255,7 @@ def store_latest_news(tickers_to_fetch):
                         "title": latest_news["title"],
                         "url": latest_news["link"],
                         "date": latest_news["date"],
-                        "summary": latest_news["summary"],  # ✅ 요약본 저장
+                        "summary": latest_news["summary"], 
                         "ticker": latest_news["ticker"]  
                     }
                 }
