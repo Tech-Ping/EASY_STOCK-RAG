@@ -8,19 +8,21 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from openai_service import get_response
 from dateutil import parser
 from news_crawler import store_latest_news
+from news_crawler import fetch_latest_news
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 
 swagger = Swagger(app)
 
-# 회사명과 티커 매핑
 COMPANY_TICKERS = {
     "삼성전자": "005930.KS",
     "현대차": "005380.KS",
     "LG에너지솔루션": "373220.KQ"
 }
 
-# 주식 정보 Enum (시가, 최고가, 최저가, 종가, 거래량)
 STOCK_FIELDS = {
     "시가": "Open",
     "최고가": "High",
@@ -76,15 +78,12 @@ def get_stock_info():
         date = data.get("date")
         print(f"회사명: {company_name}, 주식 정보: {stock_field}, 날짜: {date}")
 
-        # 회사명 검증
         if company_name not in COMPANY_TICKERS:
             return jsonify({"error": f"지원하지 않는 회사입니다: {company_name}"}), 400
 
-        # 주식 정보 검증
         if stock_field not in STOCK_FIELDS:
             return jsonify({"error": f"지원하지 않는 정보입니다: {stock_field}"}), 400
 
-        # end 날짜 구하기
         try:
             start_date = parser.parse(date).date()
             formatted_date = start_date.strftime("%Y년 %m월 %d일")
@@ -137,19 +136,52 @@ def ask():
         description: 서버 에러
     """
     try:
-        # 요청 데이터에서 질문 추출
         data = request.json
         prompt = data.get("prompt", "")
 
         if not prompt:
             return jsonify({"error": "질문이 비어있습니다."}), 400
 
-        # OpenAI 응답 생성
         response = get_response(prompt)
         return jsonify({"response": response})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+from news_crawler import fetch_latest_news  # 이미 정의되어 있는 함수
+
+@app.route('/latest-news', methods=['GET'])
+def latest_news():
+    """
+    종목별 최신 뉴스 5개를 네이버 금융 뉴스 API에서 조회하는 API
+    ---
+    parameters:
+      - name: ticker
+        in: query
+        type: string
+        required: true
+        enum: ["삼성전자", "LG에너지솔루션", "SK하이닉스", "현대차", "비에이치아이"]
+        description: 종목 이름
+        example: "삼성전자"
+    responses:
+      200:
+        description: 뉴스 리스트 반환
+      400:
+        description: 유효하지 않은 ticker
+      500:
+        description: 서버 에러
+    """
+    try:
+        ticker_name = request.args.get("ticker")
+        if not ticker_name or ticker_name not in NEWS_TICKERS:
+            return jsonify({"error": f"지원하지 않는 ticker입니다: {ticker_name}"}), 400
+
+        ticker_code = NEWS_TICKERS[ticker_name]
+        news_items = fetch_latest_news(ticker_code)
+
+        return jsonify({"ticker": ticker_name, "news": news_items}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"서버 에러: {str(e)}"}), 500
 
 @app.route('/flask/crawl-news', methods=['GET'])
 def crawl_news():
@@ -175,7 +207,6 @@ def crawl_news():
     try:
         ticker_name = request.args.get("ticker")
 
-        # ✅ 특정 종목 요청 처리
         if ticker_name and ticker_name not in NEWS_TICKERS:
             return jsonify({"error": f"Invalid ticker name: {ticker_name}"}), 400
         
