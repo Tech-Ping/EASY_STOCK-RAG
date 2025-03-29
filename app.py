@@ -9,8 +9,11 @@ from openai_service import get_response
 from dateutil import parser
 from news_crawler import store_latest_news
 from news_crawler import fetch_latest_news
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 
 swagger = Swagger(app)
 
