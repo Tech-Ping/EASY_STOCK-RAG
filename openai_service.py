@@ -5,8 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# OpenAI API 설정
-api_key = os.getenv("OPENAI_API_KEY")  # .env 파일에서 API 키 로드
+api_key = os.getenv("OPENAI_API_KEY")  
 if not api_key:
     raise ValueError("OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.")
 
