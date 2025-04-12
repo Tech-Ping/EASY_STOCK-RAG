@@ -39,7 +39,7 @@ NEWS_TICKERS = {
     "비에이치아이": "083650"
 }
 
-@app.route('/flask/stock-info', methods=['POST'])
+@app.route('/stock-info', methods=['POST'])
 def get_stock_info():
     """
     주식 정보를 처리하는 API
@@ -111,7 +111,7 @@ def get_stock_info():
         return jsonify({"error": f"서버 에러: {str(e)}"}), 500
 
 
-@app.route('/flask/ask', methods=['POST'])
+@app.route('/ask', methods=['POST'])
 def ask():
     """
     사용자 질문을 처리하는 API
@@ -183,7 +183,7 @@ def latest_news():
     except Exception as e:
         return jsonify({"error": f"서버 에러: {str(e)}"}), 500
 
-@app.route('/flask/crawl-news', methods=['GET'])
+@app.route('/crawl-news', methods=['GET'])
 def crawl_news():
     """
     최신 뉴스를 크롤링하고 특정 ticker별로 필터링하는 API
