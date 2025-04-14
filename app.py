@@ -12,7 +12,15 @@ from news_crawler import fetch_latest_news
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:3000",
+            "https://easystogy.store",
+            "https://easy-stock-techping.netlify.app"
+        ]
+    }
+})
 
 
 swagger = Swagger(app)
